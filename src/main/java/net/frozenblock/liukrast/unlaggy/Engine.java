@@ -5,6 +5,7 @@ import main.java.net.frozenblock.liukrast.asset.BinBox;
 import java.awt.*;
 import java.awt.image.BufferStrategy;
 import java.math.BigInteger;
+import java.util.Scanner;
 
 public class Engine extends Canvas implements Runnable {
 
@@ -19,8 +20,6 @@ public class Engine extends Canvas implements Runnable {
         binBox = new BinBox(numeroPalline);
         System.out.println(combinations(binBox.getBALLS().size() / 2) + " combinazioni stanno per essere generate dal programma");
     }
-
-    private long tick = 0;
 
     public synchronized void start() {
         thread = new Thread(this);
@@ -79,13 +78,13 @@ public class Engine extends Canvas implements Runnable {
     }
 
     private void tick() {
-        tick++;
         if(binBox.isBalanced()) {
             System.out.println(binBox.parseString() + "; %: [S: " + binBox.getPercentage(false) + "; R: " + binBox.getPercentage(true) + ";]");
         }
         binBox.increase();
         if(binBox.count(true) == binBox.getBALLS().size()) {
             System.out.println(combinations(binBox.getBALLS().size() / 2) + " combinazioni generate");
+            System.exit(0);
             stop();
         }
     }
@@ -106,6 +105,14 @@ public class Engine extends Canvas implements Runnable {
     }
 
     public static void main(String[] args) {
-        new Engine(2);
+        Scanner input = new Scanner(System.in);
+        System.out.print("Quante palline vogliamo usare?");
+        int numPalline = input.nextInt();
+        while(numPalline % 2 != 0) {
+            System.out.println("Il numero inserito non è pari. Inserisci nuovamente");
+            System.out.print("Quante palline vogliamo usare?");
+            numPalline = input.nextInt();
+        }
+        new Engine(numPalline/2);
     }
 }
