@@ -62,8 +62,8 @@ public class BinBox implements Colors {
 
     public int count(boolean value) {
         int r = 0;
-        for(int i = 0; i < this.BALLS.size(); i++) {
-            if(this.BALLS.get(i) == value) r++;
+        for (Boolean ball : this.BALLS) {
+            if (ball == value) r++;
         }
         return r;
     }

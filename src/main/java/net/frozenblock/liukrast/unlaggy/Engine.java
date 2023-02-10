@@ -5,6 +5,8 @@ import main.java.net.frozenblock.liukrast.asset.BinBox;
 import java.awt.*;
 import java.awt.image.BufferStrategy;
 import java.math.BigInteger;
+import java.sql.Array;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Engine extends Canvas implements Runnable {
@@ -13,10 +15,17 @@ public class Engine extends Canvas implements Runnable {
     private Thread thread;
     private boolean running = false;
 
+    int offset = 0;
+
     private BinBox binBox;
 
+    Window window;
+
+    ArrayList<Float> right_diagram = new ArrayList<>();
+    ArrayList<Float> left_diagram = new ArrayList<>();
+
     public Engine(int numeroPalline) {
-        new Window(WIDTH, HEIGHT, "Engine", this);
+        this.window = new Window(WIDTH, HEIGHT, "Engine", this);
         binBox = new BinBox(numeroPalline);
         System.out.println(combinations(binBox.getBALLS().size() / 2) + " combinazioni stanno per essere generate dal programma");
     }
@@ -80,15 +89,19 @@ public class Engine extends Canvas implements Runnable {
     private void tick() {
         if(binBox.isBalanced()) {
             System.out.println(binBox.parseString() + "; %: [S: " + binBox.getPercentage(false) + "; R: " + binBox.getPercentage(true) + ";]");
+            left_diagram.add(binBox.getPercentage(false));
+            right_diagram.add(binBox.getPercentage(true));
         }
         binBox.increase();
         if(binBox.count(true) == binBox.getBALLS().size()) {
             System.out.println(combinations(binBox.getBALLS().size() / 2) + " combinazioni generate");
-            System.exit(0);
+            //System.exit(0);
             stop();
         }
     }
+
     private void render() {
+        int leftSpacing = 30;
         BufferStrategy bs = this.getBufferStrategy();
         if(bs == null) {
             this.createBufferStrategy(3);
@@ -98,10 +111,34 @@ public class Engine extends Canvas implements Runnable {
         Graphics g = bs.getDrawGraphics();
 
         g.setColor(Color.black);
-        g.fillRect(0,0,WIDTH, HEIGHT);
+        g.fillRect(0,0, 120000, 12000);
+
+        g.setColor(Color.gray);
+        g.fillRect(leftSpacing + offset,10, combinations(binBox.getBALLS().size() / 2).intValue() * 3,100);
+        g.fillRect(leftSpacing + offset,120, combinations(binBox.getBALLS().size() / 2).intValue() * 3,100);
+
+        for(int i = 0; i < left_diagram.size(); i++) {
+            float p = left_diagram.get(i);
+            g.setColor(Color.green);
+            g.fillRect(leftSpacing + offset + i*3, 9 + (int)(p), 3, 3);
+        }
+
+        for(int i = 0; i < right_diagram.size(); i++) {
+            float p = right_diagram.get(i);
+            g.setColor(Color.red);
+            g.fillRect(leftSpacing + offset + i*3, 119 + (int)(p), 3, 3);
+        }
 
         g.dispose();
         bs.show();
+    }
+
+    public void recieveEvent(Event event) {
+        switch (event) {
+            case EVENT_RESET -> offset = 0;
+            case EVENT_FORWARD -> offset += 16;
+            case EVENT_BACKWARD -> offset -= 16;
+        }
     }
 
     public static void main(String[] args) {
@@ -114,5 +151,11 @@ public class Engine extends Canvas implements Runnable {
             numPalline = input.nextInt();
         }
         new Engine(numPalline/2);
+    }
+
+    public enum Event {
+        EVENT_RESET,
+        EVENT_FORWARD,
+        EVENT_BACKWARD;
     }
 }
