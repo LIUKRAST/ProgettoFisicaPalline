@@ -41,7 +41,7 @@ public class Window extends Canvas implements Colors {
 
         JButton run = new JButton("Genera");
         //
-        JButton mode = new JButton("Modalità: Backtracing");
+        JButton mode = new JButton("Algoritmo: Backtracing");
 
         //
         JButton nextRight = new JButton(">");
@@ -153,14 +153,14 @@ public class Window extends Canvas implements Colors {
         engine.start();
 
         mode.addActionListener(e -> {
-            if(Objects.equals(mode.getText(), "Modalità: Backtracing")) {
-                mode.setText("Modalità: Backtracing Lento");
+            if(Objects.equals(mode.getText(), "Algoritmo: Backtracing")) {
+                mode.setText("Algoritmo: Backtracing Lento");
                 executionAlgorithm = Engine.ExecutionAlgorithm.HARD_BACKTRACING;
-            } else if(Objects.equals(mode.getText(), "Modalità: Backtracing Lento")) {
-                mode.setText("Modalità: Random");
+            } else if(Objects.equals(mode.getText(), "Algoritmo: Backtracing Lento")) {
+                mode.setText("Algoritmo: Random");
                 executionAlgorithm = Engine.ExecutionAlgorithm.RANDOM;
             } else {
-                mode.setText("Modalità: Backtracing");
+                mode.setText("Algoritmo: Backtracing");
                 executionAlgorithm = Engine.ExecutionAlgorithm.BACKTRACING;
             }
         });
