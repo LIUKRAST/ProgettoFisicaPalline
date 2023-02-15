@@ -10,6 +10,7 @@ import java.util.ArrayList;
 public class Engine extends Canvas implements Runnable, Colors {
     public static final int WIDTH = 1920/2, HEIGHT = WIDTH / 16 * 9;
     private Thread thread;
+
     private boolean running = false;
     private boolean engineRunning = false;
     private PallineHandler pallineHandler;
@@ -21,6 +22,7 @@ public class Engine extends Canvas implements Runnable, Colors {
     private ArrayList<Float> leftRunValues = new ArrayList<>();
     public int roffset;
     public int loffset;
+    public int fps = 0;
 
     float pr = 0;
     float pl = 0;
@@ -51,6 +53,7 @@ public class Engine extends Canvas implements Runnable, Colors {
         double ns = 1000000000 / amountOfTicks;
         double delta = 0;
         long timer = System.currentTimeMillis();
+        int frames = 0;
         while(running) {
             long now = System.nanoTime();
             delta += (now - lastTime) / ns;
@@ -61,8 +64,11 @@ public class Engine extends Canvas implements Runnable, Colors {
             }
             if(running)
                 render();
+            frames++;
             if(System.currentTimeMillis() - timer > 1000) {
                 timer += 1000;
+                fps = frames;
+                frames = 0;
             }
         }
         stop();
@@ -174,6 +180,7 @@ public class Engine extends Canvas implements Runnable, Colors {
         g.drawString(pr1, window.WIDTH - 60 - pr1.length()*10, window.HEIGTH/2 - 5);
         String pl1 = pl + "%";
         g.drawString(pl1, window.WIDTH - 60 - pr1.length()*10, window.HEIGTH/2 + 400*window.HEIGTH/1080 + 25);
+        g.drawString("FPS: " + fps, 10, 20);
         g.dispose();
         bs.show();
     }
