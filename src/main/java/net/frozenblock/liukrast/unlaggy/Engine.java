@@ -22,6 +22,9 @@ public class Engine extends Canvas implements Runnable, Colors {
     public int roffset;
     public int loffset;
 
+    float pr = 0;
+    float pl = 0;
+
     public Engine() {
         this.window = new Window(WIDTH, HEIGHT, "Palline",this);
         pallineHandler = new PallineHandler(2);
@@ -93,6 +96,16 @@ public class Engine extends Canvas implements Runnable, Colors {
     }
 
     public void tick() {
+        float r = 0;
+        float l = 0;
+        for (Float rightRunValue : rightRunValues) {
+            r += rightRunValue;
+        }
+        for (Float leftRunValue : leftRunValues) {
+            l += leftRunValue;
+        }
+        pr = r/(float) rightRunValues.size();
+        pl = l/(float) leftRunValues.size();
         if(engineRunning && repeatTime > 0 && pallineHandler != null) {
             if(algorithm == ExecutionAlgorithm.BACKTRACING) {
                 if (pallineHandler.isBalanced()) {
@@ -156,6 +169,11 @@ public class Engine extends Canvas implements Runnable, Colors {
         for(int i = roffset; i < Math.min(rightRunValues.size(), (window.WIDTH - 120)/3 + roffset); i++) {
             g.fillRect(60 + (i-roffset)*3, fract(window.HEIGTH/2, 200*window.HEIGTH/1080, rightRunValues.get(i)) + 200*window.HEIGTH/1080 + 10, 3, 3);
         }
+        g.setColor(Color.black);
+        String pr1 = pr + "%";
+        g.drawString(pr1, window.WIDTH - 60 - pr1.length()*10, window.HEIGTH/2 - 5);
+        String pl1 = pl + "%";
+        g.drawString(pl1, window.WIDTH - 60 - pr1.length()*10, window.HEIGTH/2 + 400*window.HEIGTH/1080 + 25);
         g.dispose();
         bs.show();
     }
