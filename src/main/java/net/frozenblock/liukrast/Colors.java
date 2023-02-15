@@ -7,7 +7,7 @@ public interface Colors {
     String ANSI_GREEN = "\u001B[32m";
     String ANSI_YELLOW = "\u001B[33m";
     String BLUE = "\u001B[34m";
-    String ANSI_PURPLE = "\u001B[35m";
+    String PURPLE = "\u001B[35m";
     String CYAN = "\u001B[36m";
     String ANSI_WHITE = "\u001B[37m";
 }

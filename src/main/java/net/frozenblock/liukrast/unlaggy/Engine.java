@@ -1,33 +1,30 @@
 package main.java.net.frozenblock.liukrast.unlaggy;
 
-import main.java.net.frozenblock.liukrast.asset.BinBox;
+import main.java.net.frozenblock.liukrast.Colors;
+import main.java.net.frozenblock.liukrast.asset.PallineHandler;
 
 import java.awt.*;
 import java.awt.image.BufferStrategy;
-import java.math.BigInteger;
-import java.sql.Array;
 import java.util.ArrayList;
-import java.util.Scanner;
 
-public class Engine extends Canvas implements Runnable {
-
+public class Engine extends Canvas implements Runnable, Colors {
     public static final int WIDTH = 1920/2, HEIGHT = WIDTH / 16 * 9;
     private Thread thread;
     private boolean running = false;
+    private boolean engineRunning = false;
+    private PallineHandler pallineHandler;
+    private long repeatTime = 0;
+    private long time;
+    private final Window window;
+    private ExecutionAlgorithm algorithm = ExecutionAlgorithm.BACKTRACING;
+    private ArrayList<Float> rightRunValues = new ArrayList<>();
+    private ArrayList<Float> leftRunValues = new ArrayList<>();
+    public int roffset;
+    public int loffset;
 
-    int offset = 0;
-
-    private BinBox binBox;
-
-    Window window;
-
-    ArrayList<Float> right_diagram = new ArrayList<>();
-    ArrayList<Float> left_diagram = new ArrayList<>();
-
-    public Engine(int numeroPalline) {
-        this.window = new Window(WIDTH, HEIGHT, "Engine", this);
-        binBox = new BinBox(numeroPalline);
-        System.out.println(combinations(binBox.getBALLS().size() / 2) + " combinazioni stanno per essere generate dal programma");
+    public Engine() {
+        this.window = new Window(WIDTH, HEIGHT, "Palline",this);
+        pallineHandler = new PallineHandler(2);
     }
 
     public synchronized void start() {
@@ -51,7 +48,6 @@ public class Engine extends Canvas implements Runnable {
         double ns = 1000000000 / amountOfTicks;
         double delta = 0;
         long timer = System.currentTimeMillis();
-        int frames = 0;
         while(running) {
             long now = System.nanoTime();
             delta += (now - lastTime) / ns;
@@ -62,46 +58,76 @@ public class Engine extends Canvas implements Runnable {
             }
             if(running)
                 render();
-            frames++;
             if(System.currentTimeMillis() - timer > 1000) {
                 timer += 1000;
-                //System.out.println("FPS: " + frames);
-                frames = 0;
             }
         }
         stop();
     }
 
-    public static BigInteger combinations(int n) {
-        BigInteger numerator = factorial(2 * n);
-        BigInteger denominator = factorial(n).pow(2);
-        return numerator.divide(denominator);
+    public void initGenerator(PallineHandler handler, ExecutionMode executionMode, long loops, ExecutionAlgorithm algorithm) {
+        this.loffset = 0;
+        this.roffset = 0;
+        this.rightRunValues = new ArrayList<>();
+        this.leftRunValues = new ArrayList<>();
+        this.pallineHandler = handler;
+        long stloops = loops;
+        if(executionMode == ExecutionMode.AUTO) {
+            loops = handler.combinations().longValue() + 1;
+            stloops = handler.combinations().longValue();
+        }
+        repeatTime = loops;
+        this.algorithm = algorithm;
+        System.out.println(CYAN + "Initializing Engine!\n {\n"+ PURPLE +" \"RunLoops\": " + stloops + ";\n \"ExecutionMode\": " + executionMode.name() + ";\n \"Algorithm\": " + algorithm.name() + ";\n \"Size\": " + handler.getPalline().size() + ";" + CYAN + "\n }");
+        engineRunning = true;
     }
 
-    private static BigInteger factorial(int n) {
-        BigInteger result = BigInteger.valueOf(1);
-        for (int i = 2; i <= n; i++) {
-            result = result.multiply(BigInteger.valueOf(i));
+    public static long parseLong(String s) {
+        long l = 0;
+        try {
+            l = Long.parseLong(s);
+        } catch (Exception e) {
+            System.out.println(RED + "[ERROR] " + RESET + "Ignore this if you are running in ExecutionMode.AUTO, this might be caused by an invalid input");
         }
-        return result;
+        return l;
     }
 
-    private void tick() {
-        if(binBox.isBalanced()) {
-            System.out.println(binBox.parseString() + "; %: [S: " + binBox.getPercentage(false) + "; R: " + binBox.getPercentage(true) + ";]");
-            left_diagram.add(binBox.getPercentage(false));
-            right_diagram.add(binBox.getPercentage(true));
-        }
-        binBox.increase();
-        if(binBox.count(true) == binBox.getBALLS().size()) {
-            System.out.println(combinations(binBox.getBALLS().size() / 2) + " combinazioni generate");
-            //System.exit(0);
-            stop();
+    public void tick() {
+        if(engineRunning && repeatTime > 0 && pallineHandler != null) {
+            if(algorithm == ExecutionAlgorithm.BACKTRACING) {
+                if (pallineHandler.isBalanced()) {
+                    System.out.println(pallineHandler.parseString());
+                    rightRunValues.add(pallineHandler.percentage(true));
+                    leftRunValues.add(pallineHandler.percentage(false));
+                }
+                boolean b = pallineHandler.increase(false);
+                repeatTime--;
+                if (!b) {
+                    repeatTime = -1;
+                }
+            } else if(algorithm == ExecutionAlgorithm.HARD_BACKTRACING) {
+                if (pallineHandler.isBalanced()) {
+                    System.out.println(pallineHandler.parseString());
+                    rightRunValues.add(pallineHandler.percentage(true));
+                    leftRunValues.add(pallineHandler.percentage(false));
+                }
+                boolean b = pallineHandler.increase(false);
+                repeatTime--;
+                if (!b) {
+                    repeatTime = -1;
+                }
+            } else {
+                pallineHandler.switchRandom();
+                System.out.println(pallineHandler.parseString());
+                rightRunValues.add(pallineHandler.percentage(true));
+                leftRunValues.add(pallineHandler.percentage(false));
+                repeatTime--;
+            }
         }
     }
 
-    private void render() {
-        int leftSpacing = 30;
+    public void render() {
+        time++;
         BufferStrategy bs = this.getBufferStrategy();
         if(bs == null) {
             this.createBufferStrategy(3);
@@ -109,53 +135,42 @@ public class Engine extends Canvas implements Runnable {
         }
 
         Graphics g = bs.getDrawGraphics();
-
-        g.setColor(Color.black);
-        g.fillRect(0,0, 120000, 12000);
-
+        for(int x = 0; x < window.WIDTH; x++) {
+            for(int y = 0; y < window.HEIGTH; y++) {
+                g.setColor(window.render((float)x/(float)window.WIDTH,(float)y/(float)window.HEIGTH,time).toColor());
+                g.fillRect(x,y,1,1);
+            }
+        }
         g.setColor(Color.gray);
-        g.fillRect(leftSpacing + offset,10, combinations(binBox.getBALLS().size() / 2).intValue() * 3,100);
-        g.fillRect(leftSpacing + offset,120, combinations(binBox.getBALLS().size() / 2).intValue() * 3,100);
-
-        for(int i = 0; i < left_diagram.size(); i++) {
-            float p = left_diagram.get(i);
-            g.setColor(Color.green);
-            g.fillRect(leftSpacing + offset + i*3, 9 + (int)(p), 3, 3);
+        g.fillRect(60, window.HEIGTH/2, Math.min(3* rightRunValues.size(), window.WIDTH - 120), 200*window.HEIGTH/1080 + 3);
+        g.fillRect(60, window.HEIGTH/2 + 200*window.HEIGTH/1080 + 10, Math.min(3*leftRunValues.size(), window.WIDTH - 120), 200*window.HEIGTH/1080 + 3);
+        g.setColor(Color.green);
+        int ll = leftRunValues.size() - (window.WIDTH - 120)/3;
+        if(ll < loffset) loffset = Math.max(0, loffset - 3);
+        int lr = rightRunValues.size() - (window.WIDTH - 120)/3;
+        if(lr < roffset) roffset = Math.max(0, loffset - 3);
+        for(int i = loffset; i < Math.min(leftRunValues.size(), (window.WIDTH - 120)/3 + loffset); i++) {
+            g.fillRect(60 + (i-loffset)*3, fract(window.HEIGTH/2, 200*window.HEIGTH/1080, leftRunValues.get(i)), 3, 3);
         }
-
-        for(int i = 0; i < right_diagram.size(); i++) {
-            float p = right_diagram.get(i);
-            g.setColor(Color.red);
-            g.fillRect(leftSpacing + offset + i*3, 119 + (int)(p), 3, 3);
+        g.setColor(Color.red);
+        for(int i = roffset; i < Math.min(rightRunValues.size(), (window.WIDTH - 120)/3 + roffset); i++) {
+            g.fillRect(60 + (i-roffset)*3, fract(window.HEIGTH/2, 200*window.HEIGTH/1080, rightRunValues.get(i)) + 200*window.HEIGTH/1080 + 10, 3, 3);
         }
-
         g.dispose();
         bs.show();
     }
 
-    public void recieveEvent(Event event) {
-        switch (event) {
-            case EVENT_RESET -> offset = 0;
-            case EVENT_FORWARD -> offset += 16;
-            case EVENT_BACKWARD -> offset -= 16;
-        }
+    private static int fract(int y, int height, float f) {
+        return (int) (f*(float)height + (float) y);
     }
 
-    public static void main(String[] args) {
-        Scanner input = new Scanner(System.in);
-        System.out.print("Quante palline vogliamo usare?");
-        int numPalline = input.nextInt();
-        while(numPalline % 2 != 0) {
-            System.out.println("Il numero inserito non è pari. Inserisci nuovamente");
-            System.out.print("Quante palline vogliamo usare?");
-            numPalline = input.nextInt();
-        }
-        new Engine(numPalline/2);
+    public enum ExecutionMode {
+        AUTO,
+        INPUT
     }
-
-    public enum Event {
-        EVENT_RESET,
-        EVENT_FORWARD,
-        EVENT_BACKWARD;
+    public enum ExecutionAlgorithm {
+        BACKTRACING,
+        HARD_BACKTRACING,
+        RANDOM
     }
 }
