@@ -51,6 +51,7 @@ public class Window extends Canvas implements Colors {
         JButton prevLeft = new JButton("<");
         JButton reseLeft = new JButton("x");
         //
+        JButton lagless = new JButton("Lagless: false");
 
         label1.setVisible(false);
         coldInput.setVisible(false);
@@ -116,6 +117,7 @@ public class Window extends Canvas implements Colors {
         nextLeft.setBounds(0, HEIGTH/2 + 200*HEIGTH/1080 + 10, 50, (200*HEIGTH/1080)/3);
         prevLeft.setBounds(0, HEIGTH/2 + 200*HEIGTH/1080 + 10 + (200*HEIGTH/1080)/3, 50, (200*HEIGTH/1080)/3);
         reseLeft.setBounds(0, HEIGTH/2 + 200*HEIGTH/1080 + 10 + 2*(200*HEIGTH/1080)/3, 50, (200*HEIGTH/1080)/3);
+        lagless.setBounds(10, 30, 150, 20);
 
 
         mode.setVisible(true);
@@ -145,12 +147,23 @@ public class Window extends Canvas implements Colors {
         frame.add(prevLeft);
         frame.add(reseLeft);
 
+        frame.add(lagless);
+
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setResizable(true);
         frame.setLocationRelativeTo(null);
         frame.add(engine);
         frame.setVisible(true);
         engine.start();
+
+        lagless.addActionListener(e -> {
+            if(lagless.getText() == "Lagless: false") {
+                lagless.setText("Lagless: true");
+                engine.setLagless(true);
+            } else {
+                lagless.setText("Lagless: false");
+                engine.setLagless(false);            }
+        });
 
         mode.addActionListener(e -> {
             if(Objects.equals(mode.getText(), "Algoritmo: Backtracing")) {
@@ -202,6 +215,7 @@ public class Window extends Canvas implements Colors {
                 nextLeft.setBounds(0, HEIGTH/2 + 200*HEIGTH/1080 + 10, 50, (200*HEIGTH/1080)/3);
                 prevLeft.setBounds(0, HEIGTH/2 + 200*HEIGTH/1080 + 10 + (200*HEIGTH/1080)/3, 50, (200*HEIGTH/1080)/3);
                 reseLeft.setBounds(0, HEIGTH/2 + 200*HEIGTH/1080 + 10 + 2*(200*HEIGTH/1080)/3, 50, (200*HEIGTH/1080)/3);
+                lagless.setBounds(10, 30, 150, 20);
 
                 pallineOrValues.updateUI();
                 label.updateUI();

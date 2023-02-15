@@ -8,24 +8,25 @@ import java.awt.image.BufferStrategy;
 import java.util.ArrayList;
 
 public class Engine extends Canvas implements Runnable, Colors {
-    public static final int WIDTH = 1920/2, HEIGHT = WIDTH / 16 * 9;
-    private Thread thread;
+    public static final int WIDTH = 1920/2, HEIGHT = WIDTH / 16 * 9; // Static values to init the window size. Will not update later when you resize the window
+    private Thread thread; // Just a thread
 
-    private boolean running = false;
-    private boolean engineRunning = false;
-    private PallineHandler pallineHandler;
-    private long repeatTime = 0;
-    private long time;
-    private final Window window;
-    private ExecutionAlgorithm algorithm = ExecutionAlgorithm.BACKTRACING;
-    private ArrayList<Float> rightRunValues = new ArrayList<>();
-    private ArrayList<Float> leftRunValues = new ArrayList<>();
-    public int roffset;
-    public int loffset;
-    public int fps = 0;
+    private boolean running = false; // Defines if the machine is running
+    private boolean engineRunning = false; // Defines if the generator is running
+    private PallineHandler pallineHandler; // Class that defines a set of balls and his order, with also some other properties
+    private long repeatTime = 0; // Repeats left before stopping
+    private long time; // engine runTime, for a graphic purpose
+    private final Window window; // Our machine's window
+    private ExecutionAlgorithm algorithm = ExecutionAlgorithm.BACKTRACING; // Default algorithm is BACKTRACING, find more at the end of the class
+    private ArrayList<Float> rightRunValues = new ArrayList<>(); // All the results on the right after generation happened
+    private ArrayList<Float> leftRunValues = new ArrayList<>(); // All the left results
+    public int roffset; // Offset for rendering, when you click the arrows to move the graph
+    public int loffset; // Same but for left
+    public int fps = 0; // Frame Per Second
+    boolean lagless = false; // Lagless mode, find more later
 
-    float pr = 0;
-    float pl = 0;
+    float pr = 0; // a sum of all the rightRunValues divided by the number of values
+    float pl = 0; // Same for left
 
     public Engine() {
         this.window = new Window(WIDTH, HEIGHT, "Palline",this);
@@ -146,6 +147,10 @@ public class Engine extends Canvas implements Runnable, Colors {
     }
 
     public void render() {
+        /*
+        * I didnt use any graphic engine on the program, so it uses the CPU also for rendering stuff. This means that you will probably
+        * only have 5/9 FPS without lagless mode, while more than 1500fps with the lagless mode. Next time im gonna be using LWJGL (Aka GlSL)
+        * */
         time++;
         BufferStrategy bs = this.getBufferStrategy();
         if(bs == null) {
@@ -154,10 +159,14 @@ public class Engine extends Canvas implements Runnable, Colors {
         }
 
         Graphics g = bs.getDrawGraphics();
-        for(int x = 0; x < window.WIDTH; x++) {
-            for(int y = 0; y < window.HEIGTH; y++) {
-                g.setColor(window.render((float)x/(float)window.WIDTH,(float)y/(float)window.HEIGTH,time).toColor());
-                g.fillRect(x,y,1,1);
+        g.setColor(Color.darkGray);
+        g.fillRect(0,0, window.WIDTH, window.HEIGTH);
+        if(!lagless) {
+            for (int x = 0; x < window.WIDTH; x++) {
+                for (int y = 0; y < window.HEIGTH; y++) {
+                    g.setColor(window.render((float) x / (float) window.WIDTH, (float) y / (float) window.HEIGTH, time).toColor());
+                    g.fillRect(x, y, 1, 1);
+                }
             }
         }
         g.setColor(Color.gray);
@@ -176,23 +185,38 @@ public class Engine extends Canvas implements Runnable, Colors {
             g.fillRect(60 + (i-roffset)*3, fract(window.HEIGTH/2, 200*window.HEIGTH/1080, rightRunValues.get(i)) + 200*window.HEIGTH/1080 + 10, 3, 3);
         }
         g.setColor(Color.black);
-        String pr1 = pr + "%";
+        String pr1 = (pr * 100) + "%";
         g.drawString(pr1, window.WIDTH - 60 - pr1.length()*10, window.HEIGTH/2 - 5);
-        String pl1 = pl + "%";
+        String pl1 = (pl * 100) + "%";
         g.drawString(pl1, window.WIDTH - 60 - pr1.length()*10, window.HEIGTH/2 + 400*window.HEIGTH/1080 + 25);
         g.drawString("FPS: " + fps, 10, 20);
         g.dispose();
         bs.show();
     }
 
+    public void setLagless(boolean i) {
+        lagless = i;
+    }
+
     private static int fract(int y, int height, float f) {
         return (int) (f*(float)height + (float) y);
     }
+
+    /**
+     * ExecutionMode defines how the machine should calculate how many times to repeat the process
+     *
+     * Auto: calculate how many combinations the current PallineHandler has, and then repeat the engine with that number of times
+     * Input: Requires an input from the user*/
 
     public enum ExecutionMode {
         AUTO,
         INPUT
     }
+    /**
+     * The algorithm used to find next values
+     * BACKTRACING: A fast way to loop ALL the possibilities. May cause some crashes for very big nubers
+     * HARD_BACKTRACING: A raw version of the backtracing method. Will not cause crashes, but its a way slower
+     * RANDOM: Swaps randomly the objects!*/
     public enum ExecutionAlgorithm {
         BACKTRACING,
         HARD_BACKTRACING,

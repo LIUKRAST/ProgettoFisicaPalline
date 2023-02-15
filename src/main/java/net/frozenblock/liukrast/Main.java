@@ -4,6 +4,6 @@ import main.java.net.frozenblock.liukrast.unlaggy.Engine;
 
 public class Main {
     public static void main(String[] args) {
-        new Engine();
+        new Engine(); // Create new instance of Engine
     }
 }
